@@ -38,6 +38,39 @@ python generate.py --outdir=outputs/generate/stylegan_human_v2_1024 --trunc=0.8 
 """
 
 
+def generate_w_from_seed(
+        network_pkl: str,
+        seeds: Optional[List[int]],
+        truncation_psi: float,
+        outdir: str,
+):
+
+    print('Loading networks from "%s"...' % network_pkl)
+    import torch
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    with dnnlib.util.open_url(network_pkl) as f:
+        G = legacy.load_network_pkl(f)['G_ema'].to(device)  # type: ignore
+        if not torch.cuda.is_available():
+            G = G.float()
+    os.makedirs(outdir, exist_ok=True)
+
+    # Generate images.
+    for seed_idx, seed in enumerate(seeds):
+        if seed % 5000 == 0:
+            print(
+                'Generating image for seed %d (%d/%d) ...' %
+                (seed, seed_idx, len(seeds)))
+
+        else:  # stylegan v2/v3
+            label = torch.zeros([1, G.c_dim], device=device)
+            z = torch.from_numpy(
+                np.random.RandomState(seed).randn(
+                    1, G.z_dim)).to(device)
+
+            w = G.mapping(z, label, truncation_psi=truncation_psi)
+            return w
+
+
 def generate_images_from_outside(
         network_pkl: str,
         seeds: Optional[List[int]],
