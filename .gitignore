@@ -1,3 +1,7 @@
 .DS_Store
 models
+.ipynb_checkpoints
+__pycache__
+torch_utils/ops/__pycache__
+dnnlib/__pycache__
 
